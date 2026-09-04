@@ -1,0 +1,113 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #1a1a1a;
+
+  /* Rule colors. Chosen to stay distinguishable when printed in color. */
+  --c-ly: #fde68a;
+  --c-who: #2563eb;
+  --c-www: #059669;
+  --c-simile: #9333ea;
+  --c-alliteration: #ea580c;
+  --c-banned: #dc2626;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+/*
+ * Highlight channels.
+ *
+ * A single word routinely matches several rules at once -- an -ly adverb inside
+ * a who/which clause that also contains a banned word. Backgrounds can't stack
+ * and neither can plain box-shadow declarations, since a later class would just
+ * overwrite an earlier one. So each channel writes into its OWN custom property
+ * and the base rule composes them into one box-shadow. That way any combination
+ * of rules renders correctly with no per-combination CSS.
+ *
+ * The axes are chosen so they read as different kinds of thing:
+ *   word-level dress-up -> background fill
+ *   clause-level rule   -> underline bar beneath the text
+ *   decoration          -> thin line lower still
+ *   banned word         -> red wavy underline (its own property entirely)
+ */
+.seg {
+  box-shadow: var(--sh-who, 0 0 transparent), var(--sh-www, 0 0 transparent),
+    var(--sh-simile, 0 0 transparent), var(--sh-alliteration, 0 0 transparent);
+}
+
+.r-lyAdverb {
+  background-color: var(--c-ly);
+  border-radius: 2px;
+}
+
+.r-whoWhich {
+  --sh-who: inset 0 -0.16em 0 0 var(--c-who);
+}
+
+.r-wwwAsiaB {
+  --sh-www: inset 0 -0.32em 0 0 color-mix(in srgb, var(--c-www) 35%, transparent);
+}
+
+/*
+ * Simile and alliteration get distinct colors AND distinct heights. They're both
+ * decorations and can overlap, so sharing one style made them indistinguishable
+ * from each other in the text and in the legend.
+ */
+.r-simile {
+  --sh-simile: inset 0 -0.05em 0 0 var(--c-simile);
+}
+
+.r-alliteration {
+  --sh-alliteration: inset 0 -0.22em 0 0 color-mix(in srgb, var(--c-alliteration) 28%, transparent);
+}
+
+.r-bannedWord {
+  text-decoration: underline wavy var(--c-banned);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+/* Sentence opener badge */
+.opener-badge {
+  font-size: 0.62rem;
+  font-weight: 700;
+  vertical-align: super;
+  padding: 0 0.25em;
+  margin-right: 0.15em;
+  border-radius: 3px;
+  background: #e5e7eb;
+  color: #374151;
+}
+
+@media print {
+  /*
+   * Without this browsers drop background colors when printing, which would
+   * erase every dress-up highlight -- the entire point of the report.
+   */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    font-size: 11pt;
+  }
+
+  .print-block {
+    break-inside: avoid;
+  }
+}
