@@ -12,8 +12,11 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
-    // Vendored pdf.js worker, copied in by scripts/copy-pdf-worker.mjs.
+    // Vendored pdf.js and Tesseract runtime assets, copied into public/ by
+    // scripts/copy-static-assets.mjs. Minified third-party builds.
     "public/*.mjs",
+    "public/pdfjs/**",
+    "public/tesseract/**",
   ]),
 ]);
 

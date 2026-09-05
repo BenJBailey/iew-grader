@@ -40,5 +40,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# pdf.js worker, copied from node_modules by scripts/copy-pdf-worker.mjs
+# pdf.js and Tesseract runtime assets, copied from node_modules by
+# scripts/copy-static-assets.mjs
 /public/pdf.worker.min.mjs
+/public/pdfjs/
+/public/tesseract/
+/public/tessdata/

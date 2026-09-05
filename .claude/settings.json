@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -p \"require\\('./node_modules/tesseract.js/package.json'\\).types\")",
+      "Bash(npx playwright *)",
+      "Read(//Applications/**)",
+      "Bash(python3 -m http.server 8899 --bind 127.0.0.1)",
+      "Bash(echo \"server pid $!\")",
+      "Bash(node geometry.mjs)"
+    ]
+  }
+}
