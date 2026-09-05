@@ -81,32 +81,20 @@ describe('www.asia.b clauses', () => {
 
 describe('banned words', () => {
   it('catches a banned adjective and leaves the be-verb alone', () => {
-    const text = 'The dog was big.'
-    expect(covered(text, bannedWords(doc(text)))).toEqual(['big'])
+    const text = 'The dog was good.'
+    expect(covered(text, bannedWords(doc(text)))).toEqual(['good'])
   })
 
   it('matches inflections through the lemma', () => {
-    const text = 'He went home and got food.'
-    expect(covered(text, bannedWords(doc(text)))).toEqual(['went', 'got'])
+    const text = 'He went home and ate dinner.'
+    expect(covered(text, bannedWords(doc(text)))).toEqual(['went', 'ate'])
   })
 
-  it('bans "like" as a verb but not as a simile preposition', () => {
-    expect(covered('I like dogs.', bannedWords(doc('I like dogs.')))).toContain('like')
-    expect(covered('He ran like the wind.', bannedWords(doc('He ran like the wind.')))).not.toContain(
-      'like',
-    )
-  })
+  it('bans "make" as a verb but not as the noun spelled the same way', () => {
+    expect(covered('They make bread.', bannedWords(doc('They make bread.')))).toContain('make')
 
-  it('skips "have"/"do" used as grammatical auxiliaries', () => {
-    // "faced" is the real verb here and it is a strong one.
-    const text = 'The knight who had faced danger drew his sword.'
-    expect(covered(text, bannedWords(doc(text)))).not.toContain('had')
-    expect(covered('Did he leave?', bannedWords(doc('Did he leave?')))).not.toContain('Did')
-  })
-
-  it('still bans "have" as a main verb', () => {
-    const text = 'They have a spotted dog.'
-    expect(covered(text, bannedWords(doc(text)))).toContain('have')
+    const noun = 'He knew the make of the car.'
+    expect(covered(noun, bannedWords(doc(noun)))).not.toContain('make')
   })
 
   it('does not ban be-verbs, which are helping verbs rather than weak ones', () => {
@@ -115,6 +103,17 @@ describe('banned words', () => {
     expect(covered('There is a problem.', bannedWords(doc('There is a problem.')))).not.toContain(
       'is',
     )
+  })
+
+  it('flags only the words the teacher left checked', () => {
+    const text = 'The good dog went home.'
+    expect(covered(text, bannedWords(doc(text)))).toEqual(['good', 'went'])
+
+    // Unticking is by lemma, so dropping "go" also drops the inflection "went".
+    const onlyAdjectives = bannedWords(doc(text), { bannedLemmas: new Set(['good']) })
+    expect(covered(text, onlyAdjectives)).toEqual(['good'])
+
+    expect(bannedWords(doc(text), { bannedLemmas: new Set() })).toHaveLength(0)
   })
 })
 

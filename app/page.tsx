@@ -1,18 +1,22 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import { BannedWordToggles } from '@/components/BannedWordToggles'
 import { HighlightedText } from '@/components/HighlightedText'
 import { InputPanel } from '@/components/InputPanel'
 import { Legend } from '@/components/Legend'
 import { ParagraphChecklist } from '@/components/ParagraphChecklist'
 import { RuleToggles } from '@/components/RuleToggles'
+import { ALL_BANNED_LEMMAS } from '@/lib/data/bannedWords'
 import { normalizeText, tokenize } from '@/lib/nlp/tokenize'
 import { DEFAULT_ENABLED, classifyOpeners, runRules } from '@/lib/rules'
 import type { RuleId } from '@/lib/rules/types'
 import { renderDocument } from '@/lib/render/highlight'
 import { buildReport } from '@/lib/render/report'
+import { loadStringSet, saveStringSet } from '@/lib/storage'
 
-const STORAGE_KEY = 'iew-grader:enabled-rules'
+const RULES_KEY = 'iew-grader:enabled-rules'
+const BANNED_WORDS_KEY = 'iew-grader:enabled-banned-words'
 
 const SAMPLE = [
   'The determined boy who lived beside the mill ran swiftly toward the river. Because he was late, he quickly climbed the very big fence. He stumbled.',
@@ -20,39 +24,54 @@ const SAMPLE = [
 ].join('\n')
 
 /**
- * Restore the saved rule selection.
+ * Restore the saved selections.
  *
  * Safe to read during the initial render even though the page is prerendered at
- * build time: nothing shown before the user clicks "Grade paper" depends on this
- * value, so the prerendered HTML and the first client render agree regardless of
- * what's in storage, and there's no hydration mismatch to work around.
+ * build time: nothing shown before the user clicks "Grade paper" depends on
+ * these values, so the prerendered HTML and the first client render agree
+ * regardless of what's in storage, and there's no hydration mismatch to work
+ * around.
  */
-function loadEnabledRules(): Set<RuleId> {
-  if (typeof window === 'undefined') return new Set(DEFAULT_ENABLED)
-  try {
-    const saved = window.localStorage.getItem(STORAGE_KEY)
-    return saved ? new Set(JSON.parse(saved) as RuleId[]) : new Set(DEFAULT_ENABLED)
-  } catch {
-    // A blocked or unavailable localStorage just means defaults.
-    return new Set(DEFAULT_ENABLED)
-  }
-}
+const loadEnabledRules = () => loadStringSet<RuleId>(RULES_KEY, DEFAULT_ENABLED, DEFAULT_ENABLED)
+
+const loadEnabledBannedWords = () =>
+  loadStringSet(BANNED_WORDS_KEY, ALL_BANNED_LEMMAS, ALL_BANNED_LEMMAS)
 
 export default function Page() {
   const [text, setText] = useState('')
   const [graded, setGraded] = useState<string | null>(null)
   const [enabled, setEnabled] = useState<Set<RuleId>>(loadEnabledRules)
+  const [bannedLemmas, setBannedLemmas] = useState<Set<string>>(loadEnabledBannedWords)
 
   function toggleRule(id: RuleId) {
     setEnabled((previous) => {
       const next = new Set(previous)
       if (next.has(id)) next.delete(id)
       else next.add(id)
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify([...next]))
-      } catch {
-        // Not persisting is survivable; grading still works.
+      saveStringSet(RULES_KEY, next)
+      return next
+    })
+  }
+
+  function toggleBannedWord(word: string) {
+    setBannedLemmas((previous) => {
+      const next = new Set(previous)
+      if (next.has(word)) next.delete(word)
+      else next.add(word)
+      saveStringSet(BANNED_WORDS_KEY, next)
+      return next
+    })
+  }
+
+  /** The "all"/"none" shortcut on a group -- 12 checkboxes is tedious by hand. */
+  function setBannedGroup(words: readonly string[], on: boolean) {
+    setBannedLemmas((previous) => {
+      const next = new Set(previous)
+      for (const word of words) {
+        if (on) next.add(word)
+        else next.delete(word)
       }
+      saveStringSet(BANNED_WORDS_KEY, next)
       return next
     })
   }
@@ -62,14 +81,14 @@ export default function Page() {
 
     const normalized = normalizeText(graded)
     const doc = tokenize(normalized)
-    const findings = runRules(doc, [...enabled])
+    const findings = runRules(doc, [...enabled], { bannedLemmas })
     const openers = classifyOpeners(doc)
 
     return {
       paragraphs: renderDocument(doc, findings, openers),
       report: buildReport(doc, findings, openers),
     }
-  }, [graded, enabled])
+  }, [graded, enabled, bannedLemmas])
 
   return (
     <main className="mx-auto w-full max-w-5xl flex-1 p-6">
@@ -117,6 +136,13 @@ export default function Page() {
           </div>
 
           <RuleToggles enabled={enabled} onToggle={toggleRule} />
+          {enabled.has('bannedWord') && (
+            <BannedWordToggles
+              enabled={bannedLemmas}
+              onToggle={toggleBannedWord}
+              onSetGroup={setBannedGroup}
+            />
+          )}
           <Legend enabled={enabled} />
 
           <section className="print-block rounded-lg border border-gray-200 p-5">

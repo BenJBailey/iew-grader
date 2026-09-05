@@ -25,7 +25,7 @@ function pipeline(raw: string) {
  */
 const SAMPLE = [
   'The determined boy who lived nearby ran swiftly through the woods. ' +
-    'Because he was afraid, he quickly climbed a very big tree.',
+    'Because he was afraid, he quickly climbed a small tree.',
   'Slowly the frightened dog crept toward the silent stranger. He waited.',
 ].join('\n\n')
 
@@ -92,10 +92,11 @@ describe('report', () => {
   })
 
   it('flags banned words with their category', () => {
-    const { report } = pipeline('The dog was very big.')
-    const words = report.paragraphs[0].bannedWords.map((b) => b.word)
-    expect(words).toEqual(expect.arrayContaining(['very', 'big']))
-    expect(words).not.toContain('was')
+    const { report } = pipeline('The good dog was small.')
+    const banned = report.paragraphs[0].bannedWords
+    expect(banned.map((b) => b.word)).toEqual(['good', 'small'])
+    expect(banned.every((b) => b.detail === 'banned adjective')).toBe(true)
+    expect(banned.map((b) => b.word)).not.toContain('was')
   })
 
   it('reports opener variety across a paragraph', () => {

@@ -12,10 +12,10 @@ import { buildReport } from './render/report'
  */
 const PAPER = [
   'The courageous knight who guarded the castle rode swiftly toward the darkened forest. ' +
-    'Because the villagers were afraid, they begged him to return before nightfall. He refused. ' +
+    'Because the villagers were afraid, they wanted him to return before nightfall. He refused. ' +
     'Silently he urged his horse onward, and the trees closed behind him like a heavy door. ' +
     'That courageous knight never feared the forest.',
-  'Deep inside the woods a very big dragon was sleeping. ' +
+  'Deep inside the woods a small dragon was sleeping. ' +
     'Its scales shimmered like scattered coins while smoke curled slowly from its nostrils. ' +
     'The knight, who had faced worse danger, drew his sword calmly.',
 ].join('\n')
@@ -54,12 +54,20 @@ describe('end-to-end on a realistic paper', () => {
     expect(found('simile')).toHaveLength(2)
   })
 
-  it('flags the weak words and not the grammatical auxiliary', () => {
+  it('flags the weak verb and adjective but leaves the be-verbs alone', () => {
     const banned = found('bannedWord')
-    expect(banned).toEqual(expect.arrayContaining(['very', 'big']))
-    expect(banned).not.toContain('had')
+    expect(banned).toEqual(expect.arrayContaining(['wanted', 'small']))
     expect(banned).not.toContain('was') // be-verbs are helping verbs, not weak ones
     expect(banned).not.toContain('were')
+  })
+
+  it('drops a finding when the teacher unchecks that word', () => {
+    const narrowed = runRules(doc, undefined, { bannedLemmas: new Set(['small']) })
+    const banned = narrowed
+      .filter((f) => f.ruleId === 'bannedWord')
+      .map((f) => text.slice(f.start, f.end))
+
+    expect(banned).toEqual(['small'])
   })
 
   it('recognizes a prepositional opener behind a leading modifier', () => {

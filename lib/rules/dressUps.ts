@@ -2,7 +2,7 @@ import type { Token, TokenizedDoc } from '../nlp/tokenize'
 import { BANNED_LEMMAS, type BannedCategory } from '../data/bannedWords'
 import { LY_EXCEPTIONS } from '../data/lyExceptions'
 import { WWW_ASIA_B } from '../data/openers'
-import type { Finding } from './types'
+import { DEFAULT_RULE_OPTIONS, type Finding, type RuleOptions } from './types'
 
 /** Walk forward to the end of a clause: the next comma, or the sentence end. */
 function clauseEnd(doc: TokenizedDoc, from: number, sentenceEnd: number): number {
@@ -137,27 +137,32 @@ export function wwwAsiaBClauses(doc: TokenizedDoc): Finding[] {
 }
 
 /**
- * Which POS tags a banned lemma is allowed to match. This is what keeps "like"
- * banned as a verb ("I like dogs") but permitted as the preposition in a simile
- * ("ran like the wind"). Note AUX alongside VERB -- wink tags "have" and "do" as
- * AUX, so omitting it would let "They have a spotted dog" through.
+ * Which POS tags a banned lemma is allowed to match. A word is banned in the
+ * part of speech it was listed for and nowhere else, so a banned verb stays
+ * clear of the same spelling used as a preposition or a noun -- that's what
+ * would keep "like" flagged in "I like dogs" but not in "ran like the wind".
+ *
+ * AUX sits alongside VERB because wink tags "have" and "do" that way. Neither is
+ * on the list today, but omitting AUX would silently drop them if they return.
  */
 const POS_FOR_CATEGORY: Record<BannedCategory, string[]> = {
   verb: ['VERB', 'AUX'],
   adjective: ['ADJ'],
-  noun: ['NOUN'],
-  adverb: ['ADV'],
-  phrase: [],
 }
 
 /**
- * "have" and "do" are banned as main verbs ("I have a dog") but are pure grammar
- * as auxiliaries ("who HAD faced worse things", "did he go"). Flagging those
- * would be a false positive -- the real verb in "had faced" is "faced", which is
- * a perfectly strong one -- so the auxiliary reading is skipped.
+ * If "have" or "do" is on the banned list, it is banned as a main verb ("I have
+ * a dog") but is pure grammar as an auxiliary ("who HAD faced worse things",
+ * "did he go"). Flagging those would be a false positive -- the real verb in
+ * "had faced" is "faced", which is a perfectly strong one -- so the auxiliary
+ * reading is skipped.
  *
- * Be-verbs never reach this function: they are off the banned list entirely, so
- * they fail the lemma lookup in bannedWords() first.
+ * Neither word is listed at the moment, so nothing reaches this guard today; it
+ * stays because those two are the obvious candidates to add back, and adding
+ * them without it reintroduces the false positive.
+ *
+ * Be-verbs never reach this function either: they are off the banned list
+ * entirely, so they fail the lemma lookup in bannedWords() first.
  */
 function isGrammaticalAuxiliary(doc: TokenizedDoc, token: Token): boolean {
   if (token.pos !== 'AUX') return false
@@ -182,14 +187,21 @@ function isGrammaticalAuxiliary(doc: TokenizedDoc, token: Token): boolean {
   return isQuestion && following.some((t) => t.pos === 'VERB')
 }
 
-export function bannedWords(doc: TokenizedDoc): Finding[] {
+export function bannedWords(
+  doc: TokenizedDoc,
+  options: RuleOptions = DEFAULT_RULE_OPTIONS,
+): Finding[] {
   const findings: Finding[] = []
 
   for (const token of doc.tokens) {
     if (!token.isWord) continue
 
-    const category = BANNED_LEMMAS.get(token.lemma) ?? BANNED_LEMMAS.get(token.normal)
+    // Which spelling matched matters, not just that one did: the lemma is the
+    // key the teacher ticks in the UI, so resolve it before consulting the set.
+    const lemma = BANNED_LEMMAS.has(token.lemma) ? token.lemma : token.normal
+    const category = BANNED_LEMMAS.get(lemma)
     if (!category) continue
+    if (!options.bannedLemmas.has(lemma)) continue
     if (!POS_FOR_CATEGORY[category].includes(token.pos)) continue
     if (isGrammaticalAuxiliary(doc, token)) continue
 

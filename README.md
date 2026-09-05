@@ -52,7 +52,7 @@ devtools and grade a paper. It should still work.
 **Dress-ups** — `-ly` adverbs, who/which clauses, www.asia.b clauses
 **Sentence openers** — all six, classified per sentence, with the variety used per paragraph
 **Decorations** — similes, alliteration, questions, triple extensions, conversation
-**Banned words** — weak verbs, adjectives, vague nouns and empty intensifiers
+**Banned words** — weak verbs and weak adjectives, each one individually checkable per paper
 **Paragraph structure** — topic-sentence/clincher key-word repetition, over-repeated words
 
 ### What it deliberately does not check
@@ -74,7 +74,7 @@ The lists are plain arrays, kept apart from the rule logic:
 
 | File | Contents |
 | --- | --- |
-| `lib/data/bannedWords.ts` | Banned verbs, adjectives, nouns, intensifiers |
+| `lib/data/bannedWords.ts` | Banned verbs and adjectives |
 | `lib/data/lyExceptions.ts` | `-ly` words that aren't adverbs, plus adverbs too empty to count |
 | `lib/data/openers.ts` | www.asia.b words, prepositions, the VSS word limit |
 
@@ -86,7 +86,13 @@ grammar rather than a weak verb choice — so the grader leaves them alone, and 
 as strong-verb candidates either.
 
 Rules can also be switched off in the UI, since IEW introduces dress-ups progressively by unit.
-The selection is remembered in the browser.
+The same goes for banned words one at a time: **Banned words checked** lists every verb and
+adjective with a checkbox, so a word the student was never asked to avoid can be left unflagged
+without editing the file. Both selections are remembered in the browser.
+
+Unchecking a word only stops it being *flagged*. It still doesn't count toward the strong-verb or
+quality-adjective candidate totals — that would be claiming *good* is a quality adjective, which
+is a different statement from "don't mark it on this paper".
 
 ## Notes on accuracy
 

@@ -108,6 +108,9 @@ export function buildReport(
     let adjectives = 0
     for (const token of doc.tokens) {
       if (token.paragraph !== paragraph.index || !token.isWord) continue
+      // Deliberately the FULL banned list, not the subset the teacher ticked for
+      // this paper. Unticking a word means "don't flag it here", not "it's a
+      // strong verb now", so it still shouldn't be offered up as a candidate.
       const banned = BANNED_LEMMAS.has(token.lemma) || BANNED_LEMMAS.has(token.normal)
       if (banned) continue
       // Be-verbs are off the banned list, but they aren't strong-verb candidates

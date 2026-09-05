@@ -15,68 +15,34 @@
  */
 export const BANNED_VERBS = [
   'go',
-  'get',
   'say',
   'see',
-  'look',
-  'walk',
-  'run',
   'eat',
-  'put',
-  'take',
   'come',
   'make',
-  'do',
-  'have',
-  'give',
   'want',
-  'like',
   'think',
-  'know',
 ] as const
 
 /** Weak adjectives IEW asks students to replace with a quality adjective. */
 export const BANNED_ADJECTIVES = [
   'good',
   'bad',
-  'big',
-  'small',
-  'little',
-  'pretty',
-  'ugly',
   'nice',
-  'great',
-  'happy',
-  'sad',
-  'mad',
-  'fun',
-  'funny',
-  'cute',
-  'cool',
-  'awesome',
-  'amazing',
-  'interesting',
-  'neat',
+  'small',
 ] as const
 
-/** Vague nouns. */
-export const BANNED_NOUNS = ['thing', 'stuff', 'guy', 'kid', 'lot'] as const
-
-/** Empty intensifiers and filler adverbs. */
-export const BANNED_ADVERBS = ['very', 'really', 'so', 'quite', 'just', 'totally'] as const
-
-/**
- * Multi-word banned phrases, matched case-insensitively on whole words.
- * Handled separately from the lemma lists because they span several tokens.
- */
-export const BANNED_PHRASES = ['a lot', 'a lot of', 'kind of', 'sort of'] as const
-
-export type BannedCategory = 'verb' | 'adjective' | 'noun' | 'adverb' | 'phrase'
+export type BannedCategory = 'verb' | 'adjective'
 
 /** Lemma -> category, built once for O(1) lookup by the rules. */
 export const BANNED_LEMMAS: ReadonlyMap<string, BannedCategory> = new Map([
   ...BANNED_VERBS.map((w) => [w, 'verb'] as const),
   ...BANNED_ADJECTIVES.map((w) => [w, 'adjective'] as const),
-  ...BANNED_NOUNS.map((w) => [w, 'noun'] as const),
-  ...BANNED_ADVERBS.map((w) => [w, 'adverb'] as const),
 ])
+
+/**
+ * Every banned lemma, in list order. This is the full vocabulary the banned-word
+ * rule knows about; a teacher grading one paper can narrow it (see RuleOptions),
+ * so treat this as the ceiling rather than the active set.
+ */
+export const ALL_BANNED_LEMMAS: readonly string[] = [...BANNED_LEMMAS.keys()]

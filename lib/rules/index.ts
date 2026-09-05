@@ -1,7 +1,7 @@
 import type { TokenizedDoc } from '../nlp/tokenize'
 import { bannedWords, lyAdverbs, whoWhichClauses, wwwAsiaBClauses } from './dressUps'
 import { alliteration, questions, quotations, similes, triples } from './decorations'
-import type { Finding, Rule, RuleId } from './types'
+import { DEFAULT_RULE_OPTIONS, type Finding, type Rule, type RuleId, type RuleOptions } from './types'
 
 /**
  * The rule registry. Each rule is a pure function of the tokenized document, so
@@ -35,7 +35,7 @@ export const RULES: Rule[] = [
     id: 'bannedWord',
     label: 'Banned Word',
     channel: 'banned',
-    description: 'A weak verb, adjective, noun or intensifier to replace.',
+    description: 'A weak verb or adjective to replace.',
     run: bannedWords,
   },
   {
@@ -77,10 +77,14 @@ export const RULES: Rule[] = [
 
 export const DEFAULT_ENABLED: RuleId[] = RULES.map((r) => r.id)
 
-export function runRules(doc: TokenizedDoc, enabled: RuleId[] = DEFAULT_ENABLED): Finding[] {
+export function runRules(
+  doc: TokenizedDoc,
+  enabled: RuleId[] = DEFAULT_ENABLED,
+  options: RuleOptions = DEFAULT_RULE_OPTIONS,
+): Finding[] {
   const active = new Set(enabled)
   return RULES.filter((rule) => active.has(rule.id))
-    .flatMap((rule) => rule.run(doc))
+    .flatMap((rule) => rule.run(doc, options))
     .sort((a, b) => a.start - b.start || a.end - b.end)
 }
 
